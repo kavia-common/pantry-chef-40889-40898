@@ -1,85 +1,30 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterView } from 'vue-router'
+import AppShell from './components/layout/AppShell.vue'
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+  <AppShell title="HomeChef AI" :showSidebar="true">
+    <template #sidebar>
+      <!-- Default sidebar content can be customized per-page -->
+      <div class="u-surface" style="padding: .5rem; border-radius: var(--hc-radius);">
+        <h3 style="font-size:.95rem; font-weight:700; margin-bottom:.5rem;">Quick Actions</h3>
+        <div style="display:flex; gap:.5rem; flex-wrap:wrap;">
+          <button class="u-btn u-btn--primary">Add Ingredients</button>
+          <button class="u-btn u-btn--ghost">Scan Receipt</button>
+        </div>
+      </div>
+      <div style="height: .75rem;"></div>
+      <div class="u-card">
+        <h4 style="font-weight:700; margin-bottom:.5rem;">Tips</h4>
+        <p style="color:#6b7280; font-size:.9rem;">Try voice input to add items hands-free.</p>
+      </div>
+    </template>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
-    </div>
-  </header>
-
-  <RouterView />
+    <RouterView />
+  </AppShell>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
-
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
+/* App-centric overrides (minimal) */
 </style>

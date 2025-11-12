@@ -1,35 +1,36 @@
 @import './base.css';
 
+/* Reset scaffold constraints so AppShell controls the layout */
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  margin: 0;
+  padding: 0;
   font-weight: normal;
 }
 
+/* Legacy .green kept for sample components but mapped to theme */
 a,
 .green {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  color: var(--hc-primary);
+  transition: 0.2s;
+  padding: 2px;
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    background-color: rgba(37, 99, 235, 0.10);
+    border-radius: 6px;
   }
 }
 
+/* Remove previous center-grid behavior on large screens */
 @media (min-width: 1024px) {
   body {
-    display: flex;
-    place-items: center;
+    display: block;
   }
 
   #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+    display: block;
+    padding: 0;
   }
 }
