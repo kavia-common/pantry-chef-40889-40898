@@ -74,8 +74,12 @@ export class ApiError extends Error {
  */
 export function createApiClient(options: ApiClientOptions = {}) {
   const baseUrl = (options.baseUrl || getApiBase()).replace(/\/+$/, '')
-  const defaultHeaders: Record<string, string> = {
-    ...(options.defaultHeaders || {}),
+  // Initialize as a clean string map; avoid spread on possibly untyped objects to keep strict typing.
+  const defaultHeaders: Record<string, string> = {}
+  if (options.defaultHeaders) {
+    for (const [k, v] of Object.entries(options.defaultHeaders)) {
+      defaultHeaders[k] = String(v)
+    }
   }
 
   // Core fetch wrapper with JSON handling, error normalization, and optional hooks
@@ -108,16 +112,28 @@ export function createApiClient(options: ApiClientOptions = {}) {
       ...(headers || {}),
     }
     // Only add Content-Type when body is not FormData, so browser can set multipart boundaries.
-    if (!(body instanceof FormData)) {
-      computedHeaders['Content-Type'] = 'application/json'
+    if (body != null && !(body instanceof FormData)) {
+      // Only set Content-Type for non-FormData requests that actually send a body
+      // If body is a string, assume it already encodes the desired content type (JSON in our helpers)
+      if (typeof body !== 'string') {
+        computedHeaders['Content-Type'] = 'application/json'
+      } else {
+        // For string bodies, set JSON when it looks like JSON; otherwise leave unset
+        if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+          computedHeaders['Content-Type'] = 'application/json'
+        }
+      }
     }
 
+    // Prepare RequestInit; avoid assigning non-BodyInit (e.g., undefined) to body
     const init: RequestInit = {
       method,
-      headers: computedHeaders,
-      body,
+      headers: computedHeaders as HeadersInit,
       signal,
       credentials: 'include', // allow cookies if backend uses session-based auth
+    }
+    if (body !== undefined && body !== null) {
+      init.body = body
     }
 
     const finalInit = options.onRequestInit ? await options.onRequestInit(init) : init
