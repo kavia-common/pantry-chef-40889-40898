@@ -121,19 +121,29 @@ export function createApiClient(options: ApiClientOptions = {}) {
         computedHeaders[k] = String(v)
       }
     }
-    // Only add Content-Type when body is not FormData, so browser can set multipart boundaries.
-    if (body != null && !(body instanceof FormData)) {
-      if (body instanceof Blob) {
+    // Only add Content-Type when body is a string or Blob with type.
+    // For FormData and object payloads, we either let the browser set it or we set it explicitly later.
+    if (body != null) {
+      if (body instanceof FormData) {
+        // let browser set multipart boundary
+      } else if (body instanceof Blob) {
         if ((body as Blob).type) {
           computedHeaders['Content-Type'] = (body as Blob).type
         }
       } else if (typeof body === 'string') {
         const trimmed = body.trim()
-        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          computedHeaders['Content-Type'] = 'application/json'
-        }
+        computedHeaders['Content-Type'] = trimmed.startsWith('{') || trimmed.startsWith('[')
+          ? 'application/json'
+          : 'text/plain'
       } else if (typeof body === 'object') {
-        // leave as is; callers using JSON will set header at call sites
+        // object payloads will be converted to Blob(JSON) below with explicit Content-Type in those call sites
+        // No header set here. Ensure any prior computedHeaders values are strings only.
+        // Defensive: normalize any header values that may have leaked as non-strings.
+        for (const key of Object.keys(computedHeaders)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const val: any = (computedHeaders as Record<string, unknown>)[key]
+          computedHeaders[key] = typeof val === 'string' ? val : String(val ?? '')
+        }
       }
     }
 
