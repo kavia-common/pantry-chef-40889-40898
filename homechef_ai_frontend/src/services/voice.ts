@@ -242,12 +242,20 @@ async function startWithMediaRecorderAndUpload(): Promise<boolean> {
       'audio/mp4',
     ]
     let mimeType = ''
-    const MR = (window as unknown as { MediaRecorder?: { isTypeSupported?: (t: string) => boolean } }).MediaRecorder
-    if (MR && typeof MR.isTypeSupported === 'function') {
+    const MR = (window as unknown as { MediaRecorder?: { isTypeSupported?: ((t: string) => boolean) | undefined } }).MediaRecorder
+    // Guard both existence and that isTypeSupported is callable, also handle environments where it exists but not implemented
+    const isTypeSupported: ((t: string) => boolean) | undefined =
+      MR && typeof MR.isTypeSupported === 'function' ? MR.isTypeSupported : undefined
+    const canCheckTypes: boolean = !!isTypeSupported
+    if (canCheckTypes === true) {
       for (const c of candidates) {
-        if (MR.isTypeSupported(c)) {
-          mimeType = c
-          break
+        try {
+          if (isTypeSupported(c)) {
+            mimeType = c
+            break
+          }
+        } catch {
+          // Some browsers throw for unknown types; ignore and continue
         }
       }
     }

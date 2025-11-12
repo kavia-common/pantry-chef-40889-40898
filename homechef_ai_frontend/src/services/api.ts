@@ -207,9 +207,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     return data as T as RequestReturn<T, R>
   }
 
-  // Shorthand helpers for common content-types
-  // Ensure this helper always returns a string (to satisfy strict typing where a string is required)
-  const json = (input: unknown): string => JSON.stringify(input ?? {})
+  // Note: previously had a JSON shorthand helper; removed to avoid unused var lint error.
 
   // Namespaced API surface
   const client: {
@@ -290,7 +288,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /recipes/generate
        */
       async generate(payload: unknown, extra?: { signal?: AbortSignal }) {
-        const bodyStr: string = JSON.stringify(payload ?? {})
+        const bodyStr: string = JSON.stringify(payload ?? '')
         return request<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>(
           '/recipes/generate',
           {
@@ -356,7 +354,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /pantry
        */
       async create(item: { name: string; quantity?: string; expiresAt?: string }, extra?: { signal?: AbortSignal }) {
-        const bodyStr: string = JSON.stringify(item ?? {})
+        const bodyStr: string = JSON.stringify(item ?? '')
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
           body: bodyStr,
@@ -374,7 +372,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
         updates: Partial<{ name: string; quantity?: string; expiresAt?: string }>,
         extra?: { signal?: AbortSignal },
       ) {
-        const bodyStr: string = JSON.stringify(updates ?? {})
+        const bodyStr: string = JSON.stringify(updates ?? '')
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>(
           `/pantry/${encodeURIComponent(id)}`,
           {
