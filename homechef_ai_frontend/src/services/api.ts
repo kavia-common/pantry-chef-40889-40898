@@ -113,15 +113,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
     }
     // Only add Content-Type when body is not FormData, so browser can set multipart boundaries.
     if (body != null && !(body instanceof FormData)) {
-      // Only set Content-Type for non-FormData requests that actually send a body
-      // If body is a string, assume it already encodes the desired content type (JSON in our helpers)
-      if (typeof body !== 'string') {
-        computedHeaders['Content-Type'] = 'application/json'
-      } else {
-        // For string bodies, set JSON when it looks like JSON; otherwise leave unset
-        if (body.trim().startsWith('{') || body.trim().startsWith('[')) {
+      // Only set Content-Type when sending a non-FormData body
+      if (typeof body === 'string') {
+        const trimmed = body.trim()
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
           computedHeaders['Content-Type'] = 'application/json'
+        } else {
+          // leave as-is for plain text or other types
         }
+      } else {
+        computedHeaders['Content-Type'] = 'application/json'
       }
     }
 
@@ -207,10 +208,34 @@ export function createApiClient(options: ApiClientOptions = {}) {
   }
 
   // Shorthand helpers for common content-types
-  const json = (input: unknown) => JSON.stringify(input ?? {})
+  // Ensure this helper always returns a string (to satisfy strict typing where a string is required)
+  const json = (input: unknown): string => JSON.stringify(input ?? {})
 
   // Namespaced API surface
-  const client = {
+  const client: {
+    baseUrl: string
+    ingredients: {
+      parsePhoto: (imageFile: File | Blob, extra?: { signal?: AbortSignal; fields?: Record<string, string> }) => Promise<{ items: Array<{ name: string; quantity?: string }> }>
+      transcribe: (audioBlob: Blob, extra?: { signal?: AbortSignal; fields?: Record<string, string> }) => Promise<{ text: string; items?: Array<{ name: string; quantity?: string }> }>
+    }
+    recipes: {
+      generate: (payload: unknown, extra?: { signal?: AbortSignal }) => Promise<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>
+      getStream: (id: string, opts?: { raw?: boolean; signal?: AbortSignal }) => Promise<Response | JSONLike>
+    }
+    nutrition: {
+      analyze: (payload: unknown, extra?: { signal?: AbortSignal }) => Promise<{ calories?: number; macros?: Record<string, number>; details?: JSONLike }>
+    }
+    pantry: {
+      list: (extra?: { signal?: AbortSignal }) => Promise<Array<{ id: string; name: string; quantity?: string; expiresAt?: string }>>
+      create: (item: { name: string; quantity?: string; expiresAt?: string }, extra?: { signal?: AbortSignal }) => Promise<{ id: string; name: string; quantity?: string; expiresAt?: string }>
+      update: (id: string, updates: Partial<{ name: string; quantity?: string; expiresAt?: string }>, extra?: { signal?: AbortSignal }) => Promise<{ id: string; name: string; quantity?: string; expiresAt?: string }>
+      remove: (id: string, extra?: { signal?: AbortSignal }) => Promise<{ success: boolean }>
+    }
+    savedRecipes: {
+      list: (extra?: { signal?: AbortSignal }) => Promise<Array<{ id: string; title: string; createdAt?: string }>>
+      create: (payload: { recipeId?: string; title?: string; data?: unknown }, extra?: { signal?: AbortSignal }) => Promise<{ id: string; title?: string }>
+    }
+  } = {
     baseUrl,
 
     // Ingredients-related endpoints
@@ -265,11 +290,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /recipes/generate
        */
       async generate(payload: unknown, extra?: { signal?: AbortSignal }) {
+        const bodyStr: string = JSON.stringify(payload ?? {})
         return request<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>(
           '/recipes/generate',
           {
             method: 'POST',
-            body: json(payload),
+            body: bodyStr,
             signal: extra?.signal,
           },
         )
@@ -298,11 +324,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /nutrition/analyze
        */
       async analyze(payload: unknown, extra?: { signal?: AbortSignal }) {
+        const bodyStr: string = JSON.stringify(payload ?? {})
         return request<{ calories?: number; macros?: Record<string, number>; details?: JSONLike }>(
           '/nutrition/analyze',
           {
             method: 'POST',
-            body: json(payload),
+            body: bodyStr,
             signal: extra?.signal,
           },
         )
@@ -329,9 +356,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /pantry
        */
       async create(item: { name: string; quantity?: string; expiresAt?: string }, extra?: { signal?: AbortSignal }) {
+        const bodyStr: string = JSON.stringify(item ?? {})
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
-          body: json(item),
+          body: bodyStr,
           signal: extra?.signal,
         })
       },
@@ -346,11 +374,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
         updates: Partial<{ name: string; quantity?: string; expiresAt?: string }>,
         extra?: { signal?: AbortSignal },
       ) {
+        const bodyStr: string = JSON.stringify(updates ?? {})
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>(
           `/pantry/${encodeURIComponent(id)}`,
           {
             method: 'PUT',
-            body: json(updates),
+            body: bodyStr,
             signal: extra?.signal,
           },
         )
@@ -392,11 +421,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
         payload: { recipeId?: string; title?: string; data?: unknown },
         extra?: { signal?: AbortSignal },
       ) {
+        const bodyStr: string = JSON.stringify(payload ?? {})
         return request<{ id: string; title?: string }>(
           '/saved-recipes',
           {
             method: 'POST',
-            body: json(payload),
+            body: bodyStr,
             signal: extra?.signal,
           },
         )
