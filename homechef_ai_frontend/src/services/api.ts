@@ -150,11 +150,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
     // Build RequestInit in a mutable way and assign headers using a real Headers instance
     const init: RequestInit = {}
     init.method = method
-    const headersObj = new Headers()
+    // Use a plain object for headers to satisfy different TS lib versions expecting HeadersInit
+    const headersPlain: Record<string, string> = {}
     for (const [k, v] of Object.entries(computedHeaders)) {
-      headersObj.set(k, String(v))
+      headersPlain[k] = String(v)
     }
-    init.headers = headersObj
+    init.headers = headersPlain
     init.signal = signal
     init.credentials = 'include' // allow cookies if backend uses session-based auth
     if (body !== undefined && body !== null) {
@@ -216,12 +217,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
     if (!res.ok) {
       // Normalize error shape
       const isObj = typeof data === 'object' && data !== null
-      const message =
-        (isObj && 'message' in (data as Record<string, unknown>) && typeof (data as Record<string, unknown>).message === 'string'
-          ? (data as Record<string, unknown>).message
+      const message: string =
+        (isObj &&
+          'message' in (data as Record<string, unknown>) &&
+          typeof (data as Record<string, unknown>).message === 'string'
+          ? ((data as Record<string, unknown>).message as string)
           : undefined) ||
-        (isObj && 'error' in (data as Record<string, unknown>) && typeof (data as Record<string, unknown>).error === 'string'
-          ? (data as Record<string, unknown>).error
+        (isObj &&
+          'error' in (data as Record<string, unknown>) &&
+          typeof (data as Record<string, unknown>).error === 'string'
+          ? ((data as Record<string, unknown>).error as string)
           : undefined) ||
         `Request failed with status ${res.status}`
 

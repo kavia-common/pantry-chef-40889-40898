@@ -158,7 +158,7 @@ const kcalTotal = computed(() => nutrition.currentRecipeNutrition?.calories ?? 0
             </button>
           </div>
           <div class="drawer-content">
-            <PantryList compact />
+            <PantryList :items="pantry.items" :loading="pantry.loading" />
             <div class="divider" role="separator" aria-hidden="true"></div>
             <h3 class="card-title" id="nutrition-mobile">Nutrition</h3>
             <NutritionPanel aria-labelledby="nutrition-mobile" />
