@@ -298,15 +298,15 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /recipes/generate
        */
       async generate(payload: unknown, extra?: { signal?: AbortSignal }) {
-        const bodyObj: Record<string, unknown> = (payload && typeof payload === 'object') ? (payload as Record<string, unknown>) : {}
-        const json = JSON.stringify(bodyObj)
-        const blob: Blob = new Blob([json], { type: 'application/json' })
+        const bodyObj: Record<string, unknown> =
+          (payload && typeof payload === 'object') ? (payload as Record<string, unknown>) : {}
+        const bodyStr: string = JSON.stringify(bodyObj)
         return request<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>(
           '/recipes/generate',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' } as Record<string, string>,
-            body: blob,
+            body: bodyStr as unknown as BodyInit, // ensure BodyInit type
             signal: extra?.signal,
           },
         )
@@ -374,7 +374,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' } as Record<string, string>,
           body: bodyInit,
           signal: extra?.signal,
         })
@@ -397,7 +397,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
           `/pantry/${encodeURIComponent(id)}`,
           {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json' } as unknown as Record<string, string>,
             body: bodyInit,
             signal: extra?.signal,
           },
