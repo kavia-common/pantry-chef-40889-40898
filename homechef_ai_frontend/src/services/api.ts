@@ -354,10 +354,13 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /pantry
        */
       async create(item: { name: string; quantity?: string; expiresAt?: string }, extra?: { signal?: AbortSignal }) {
-        const bodyStr: string = JSON.stringify(item ?? '')
+        const payload = (item ?? { name: '' }) as Record<string, unknown>
+        const bodyStr = JSON.stringify(payload)
+        // Use Blob to ensure BodyInit typing across TS lib versions
+        const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
-          body: bodyStr,
+          body: bodyInit,
           signal: extra?.signal,
         })
       },
@@ -372,12 +375,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
         updates: Partial<{ name: string; quantity?: string; expiresAt?: string }>,
         extra?: { signal?: AbortSignal },
       ) {
-        const bodyStr: string = JSON.stringify(updates ?? '')
+        const payload = (updates ?? {}) as Record<string, unknown>
+        const bodyStr = JSON.stringify(payload)
+        const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>(
           `/pantry/${encodeURIComponent(id)}`,
           {
             method: 'PUT',
-            body: bodyStr,
+            body: bodyInit,
             signal: extra?.signal,
           },
         )

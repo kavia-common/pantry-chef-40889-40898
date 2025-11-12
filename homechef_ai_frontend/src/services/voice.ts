@@ -243,14 +243,12 @@ async function startWithMediaRecorderAndUpload(): Promise<boolean> {
     ]
     let mimeType = ''
     const MR = (window as unknown as { MediaRecorder?: { isTypeSupported?: ((t: string) => boolean) | undefined } }).MediaRecorder
-    // Guard both existence and that isTypeSupported is callable, also handle environments where it exists but not implemented
-    const isTypeSupported: ((t: string) => boolean) | undefined =
-      MR && typeof MR.isTypeSupported === 'function' ? MR.isTypeSupported : undefined
-    const canCheckTypes: boolean = !!isTypeSupported
-    if (canCheckTypes === true) {
+    const canCheckTypes = !!(MR && typeof MR.isTypeSupported === 'function')
+    if (canCheckTypes) {
+      const isTypeSupported = MR!.isTypeSupported as (t: string) => boolean
       for (const c of candidates) {
         try {
-          if (isTypeSupported(c)) {
+          if (isTypeSupported && isTypeSupported(c)) {
             mimeType = c
             break
           }
@@ -337,7 +335,8 @@ const VoiceService: VoiceService = {
     }
 
     // Try Web Speech API first if enabled
-    const speechSupported = Boolean(getSpeechRecognition())
+    const speechCtor = getSpeechRecognition()
+    const speechSupported = speechCtor !== null
     if (sttEnabled && speechSupported) {
       const ok = await startWithSpeechAPI()
       if (ok) return true
