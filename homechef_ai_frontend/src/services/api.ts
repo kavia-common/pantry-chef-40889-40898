@@ -137,14 +137,29 @@ export function createApiClient(options: ApiClientOptions = {}) {
       }
     }
 
-    // Build RequestInit in a mutable way and assign headers explicitly as HeadersInit
+    // Build RequestInit in a mutable way and assign headers using a real Headers instance
     const init: RequestInit = {}
     init.method = method
-    init.headers = computedHeaders as HeadersInit
+    const headersObj = new Headers()
+    for (const [k, v] of Object.entries(computedHeaders)) {
+      headersObj.set(k, String(v))
+    }
+    init.headers = headersObj
     init.signal = signal
     init.credentials = 'include' // allow cookies if backend uses session-based auth
     if (body !== undefined && body !== null) {
-      init.body = body as BodyInit
+      // Normalize to BodyInit explicitly to satisfy TS across lib versions
+      let bodyInit: BodyInit
+      if (body instanceof Blob || body instanceof FormData || body instanceof URLSearchParams) {
+        bodyInit = body
+      } else if (typeof body === 'string') {
+        bodyInit = body
+      } else {
+        // Encode arbitrary values as JSON blob
+        const json = JSON.stringify(body)
+        bodyInit = new Blob([json], { type: 'application/json' })
+      }
+      init.body = bodyInit
     }
 
     const finalInit: RequestInit = options.onRequestInit ? await options.onRequestInit(init) : init
