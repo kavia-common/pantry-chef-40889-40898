@@ -209,6 +209,14 @@ a:hover {
   padding: 1rem 0;
 }
 
+/* Toast utility (no color tokens here; component handles colors) */
+.toast-container {
+  pointer-events: none; /* allow clicks to pass through except on toasts */
+}
+.toast-container > .toast {
+  pointer-events: auto;
+}
+
 /* Badges */
 .badge {
   padding: 0.125rem 0.5rem;

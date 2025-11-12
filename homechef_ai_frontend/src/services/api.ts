@@ -355,12 +355,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
        */
       async analyze(payload: unknown, extra?: { signal?: AbortSignal }) {
         const bodyStr: string = JSON.stringify(payload ?? {})
+        const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
+        const headersObj: Record<string, string> = { 'Content-Type': 'application/json' }
         return request<{ calories?: number; macros?: Record<string, number>; details?: JSONLike }>(
           '/nutrition/analyze',
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' } as Record<string, string>,
-            body: bodyStr,
+            headers: headersObj,
+            body: bodyInit,
             signal: extra?.signal,
           },
         )
@@ -391,9 +393,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const bodyStr = JSON.stringify(payload)
         // Use Blob to ensure BodyInit typing across TS lib versions
         const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
+        const headersObj: Record<string, string> = { 'Content-Type': 'application/json' }
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' } as Record<string, string>,
+          headers: headersObj,
           body: bodyInit,
           signal: extra?.signal,
         })
@@ -412,11 +415,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const payload = (updates ?? {}) as Record<string, unknown>
         const bodyStr = JSON.stringify(payload)
         const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
+        const headersObj: Record<string, string> = { 'Content-Type': 'application/json' }
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>(
           `/pantry/${encodeURIComponent(id)}`,
           {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' } as unknown as Record<string, string>,
+            headers: headersObj,
             body: bodyInit,
             signal: extra?.signal,
           },
@@ -460,12 +464,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
         extra?: { signal?: AbortSignal },
       ) {
         const bodyStr: string = JSON.stringify(payload ?? {})
+        const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
+        const headersObj: Record<string, string> = { 'Content-Type': 'application/json' }
         return request<{ id: string; title?: string }>(
           '/saved-recipes',
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: bodyStr,
+            headers: headersObj,
+            body: bodyInit,
             signal: extra?.signal,
           },
         )

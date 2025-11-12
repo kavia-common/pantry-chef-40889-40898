@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import AppShell from './components/layout/AppShell.vue'
+import Toast from './components/common/Toast.vue'
 </script>
 
 <template>
@@ -22,6 +23,9 @@ import AppShell from './components/layout/AppShell.vue'
     </template>
 
     <RouterView />
+
+    <!-- Global Toasts -->
+    <Toast position="top-right" />
   </AppShell>
 </template>
 
