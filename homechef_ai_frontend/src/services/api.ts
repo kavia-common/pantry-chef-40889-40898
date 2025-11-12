@@ -83,17 +83,12 @@ export function createApiClient(options: ApiClientOptions = {}) {
   }
 
   // Core fetch wrapper with JSON handling, error normalization, and optional hooks
-  type RequestReturn<T, R extends boolean> = R extends true ? Response : T
+  // Use a distributive conditional over a narrowed R to help TS avoid odd inferences
+  type RequestReturn<T, R extends boolean> = [R] extends [true] ? Response : T
 
   async function request<T = JSONLike, R extends boolean = false>(
     path: string,
-    {
-      method = 'GET',
-      headers,
-      body,
-      signal,
-      raw = false as R,
-    }: {
+    opts: {
       method?: HttpMethod
       headers?: Record<string, string>
       body?: BodyInit | undefined | null
@@ -104,16 +99,30 @@ export function createApiClient(options: ApiClientOptions = {}) {
       raw?: R
     } = {},
   ): Promise<RequestReturn<T, R>> {
+    const {
+      method = 'GET',
+      headers,
+      body,
+      signal,
+      raw = false as R,
+    } = opts
+
     const url = `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`
 
-    // Construct headers explicitly to satisfy TS typing
-    const computedHeaders: Record<string, string> = {
-      ...defaultHeaders,
-      ...(headers || {}),
+    // Construct headers explicitly to satisfy TS typing and avoid loose inference
+    const computedHeaders: Record<string, string> = {}
+    // copy defaults
+    for (const [k, v] of Object.entries(defaultHeaders)) {
+      computedHeaders[k] = String(v)
+    }
+    // copy per-request headers ensuring string values
+    if (headers) {
+      for (const [k, v] of Object.entries(headers)) {
+        computedHeaders[k] = String(v)
+      }
     }
     // Only add Content-Type when body is not FormData, so browser can set multipart boundaries.
     if (body != null && !(body instanceof FormData)) {
-      // If the body is a Blob, attempt to use its type, otherwise default to JSON.
       if (body instanceof Blob) {
         if ((body as Blob).type) {
           computedHeaders['Content-Type'] = (body as Blob).type
@@ -123,24 +132,22 @@ export function createApiClient(options: ApiClientOptions = {}) {
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
           computedHeaders['Content-Type'] = 'application/json'
         }
-      } else {
-        // Fallback: likely URLSearchParams/ReadableStream/etc.; do not override to avoid incorrect boundary
-        // If needed, the caller can set Content-Type explicitly via headers
+      } else if (typeof body === 'object') {
+        // leave as is; callers using JSON will set header at call sites
       }
     }
 
-    // Prepare RequestInit; avoid assigning non-BodyInit (e.g., undefined) to body
-    const init: RequestInit = {
-      method,
-      headers: computedHeaders as HeadersInit,
-      signal,
-      credentials: 'include', // allow cookies if backend uses session-based auth
-    }
+    // Build RequestInit in a mutable way and assign headers explicitly as HeadersInit
+    const init: RequestInit = {}
+    init.method = method
+    init.headers = computedHeaders as HeadersInit
+    init.signal = signal
+    init.credentials = 'include' // allow cookies if backend uses session-based auth
     if (body !== undefined && body !== null) {
-      init.body = body
+      init.body = body as BodyInit
     }
 
-    const finalInit = options.onRequestInit ? await options.onRequestInit(init) : init
+    const finalInit: RequestInit = options.onRequestInit ? await options.onRequestInit(init) : init
 
     let res: Response
     try {
@@ -166,7 +173,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     if (raw) {
       // Caller will handle stream/body reading
-      return res as unknown as RequestReturn<T, R>
+      return (res as unknown) as RequestReturn<T, R>
     }
 
     // Attempt to parse JSON body. Gracefully handle empty body.
@@ -207,7 +214,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
       throw new ApiError(normalized)
     }
 
-    return data as T as RequestReturn<T, R>
+    return (data as T) as RequestReturn<T, R>
   }
 
   // Note: previously had a JSON shorthand helper; removed to avoid unused var lint error.
@@ -298,6 +305,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
           '/recipes/generate',
           {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' } as Record<string, string>,
             body: blob,
             signal: extra?.signal,
           },
@@ -332,6 +340,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
           '/nutrition/analyze',
           {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' } as Record<string, string>,
             body: bodyStr,
             signal: extra?.signal,
           },
@@ -365,6 +374,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
         return request<{ id: string; name: string; quantity?: string; expiresAt?: string }>('/pantry', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: bodyInit,
           signal: extra?.signal,
         })
@@ -387,6 +397,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
           `/pantry/${encodeURIComponent(id)}`,
           {
             method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
             body: bodyInit,
             signal: extra?.signal,
           },
@@ -434,6 +445,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
           '/saved-recipes',
           {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: bodyStr,
             signal: extra?.signal,
           },
