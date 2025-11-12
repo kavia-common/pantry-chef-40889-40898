@@ -96,7 +96,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     }: {
       method?: HttpMethod
       headers?: Record<string, string>
-      body?: BodyInit | null
+      body?: BodyInit | undefined | null
       signal?: AbortSignal
       /**
        * When true, returns the raw Response rather than parsing JSON
@@ -113,16 +113,19 @@ export function createApiClient(options: ApiClientOptions = {}) {
     }
     // Only add Content-Type when body is not FormData, so browser can set multipart boundaries.
     if (body != null && !(body instanceof FormData)) {
-      // Only set Content-Type when sending a non-FormData body
-      if (typeof body === 'string') {
+      // If the body is a Blob, attempt to use its type, otherwise default to JSON.
+      if (body instanceof Blob) {
+        if ((body as Blob).type) {
+          computedHeaders['Content-Type'] = (body as Blob).type
+        }
+      } else if (typeof body === 'string') {
         const trimmed = body.trim()
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
           computedHeaders['Content-Type'] = 'application/json'
-        } else {
-          // leave as-is for plain text or other types
         }
       } else {
-        computedHeaders['Content-Type'] = 'application/json'
+        // Fallback: likely URLSearchParams/ReadableStream/etc.; do not override to avoid incorrect boundary
+        // If needed, the caller can set Content-Type explicitly via headers
       }
     }
 
@@ -288,12 +291,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
        * POST /recipes/generate
        */
       async generate(payload: unknown, extra?: { signal?: AbortSignal }) {
-        const bodyStr: string = JSON.stringify(payload ?? '')
+        const bodyObj: Record<string, unknown> = (payload && typeof payload === 'object') ? (payload as Record<string, unknown>) : {}
+        const json = JSON.stringify(bodyObj)
+        const blob: Blob = new Blob([json], { type: 'application/json' })
         return request<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>(
           '/recipes/generate',
           {
             method: 'POST',
-            body: bodyStr,
+            body: blob,
             signal: extra?.signal,
           },
         )

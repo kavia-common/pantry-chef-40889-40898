@@ -344,7 +344,7 @@ const VoiceService: VoiceService = {
     }
 
     // Fallback to MediaRecorder + server transcription if allowed
-    if (serverTranscribeEnabled && navigator.mediaDevices?.getUserMedia && getMediaRecorderCtor()) {
+    if (serverTranscribeEnabled && !!navigator.mediaDevices?.getUserMedia) {
       const ok = await startWithMediaRecorderAndUpload()
       if (ok) return true
     }
