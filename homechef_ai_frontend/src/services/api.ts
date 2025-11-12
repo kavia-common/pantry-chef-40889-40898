@@ -316,12 +316,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
         const bodyObj: Record<string, unknown> =
           (payload && typeof payload === 'object') ? (payload as Record<string, unknown>) : {}
         const bodyStr: string = JSON.stringify(bodyObj)
+        // Use Blob to ensure BodyInit compatible type across TS lib versions
+        const bodyInit: BodyInit = new Blob([bodyStr], { type: 'application/json' })
+        // Use a simple typed object for headers to avoid inference issues
+        const headersObj: Record<string, string> = { 'Content-Type': 'application/json' }
         return request<{ id: string; status: 'queued' | 'processing' | 'ready'; recipes?: JSONLike[] }>(
           '/recipes/generate',
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' } as Record<string, string>,
-            body: bodyStr as unknown as BodyInit, // ensure BodyInit type
+            headers: headersObj,
+            body: bodyInit,
             signal: extra?.signal,
           },
         )
