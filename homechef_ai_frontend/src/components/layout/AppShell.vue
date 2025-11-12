@@ -58,7 +58,10 @@ function toggleSidebar() {
 
         <nav class="nav-links" aria-label="Primary navigation">
           <RouterLink to="/" class="nav-link" active-class="nav-link--active" exact>Home</RouterLink>
-          <RouterLink to="/about" class="nav-link" active-class="nav-link--active">About</RouterLink>
+          <RouterLink to="/recipes" class="nav-link" active-class="nav-link--active">Recipes</RouterLink>
+          <RouterLink to="/pantry" class="nav-link" active-class="nav-link--active">Pantry</RouterLink>
+          <RouterLink to="/nutrition" class="nav-link" active-class="nav-link--active">Nutrition</RouterLink>
+          <RouterLink to="/settings" class="nav-link" active-class="nav-link--active">Settings</RouterLink>
         </nav>
 
         <div class="nav-actions">
